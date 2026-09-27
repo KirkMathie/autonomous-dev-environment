@@ -2,7 +2,7 @@
 
 ## Status
 
-IN_PROGRESS — implementation and local verification are complete; required PR CI has not yet passed.
+COMPLETE — implementation, local validation, and required PR CI passed.
 
 ## Dependencies
 
@@ -20,7 +20,7 @@ IN_PROGRESS — implementation and local verification are complete; required PR 
 
 - [x] Unit, integration, contract, and security tests cover critical invariants and adapters.
 - [x] Architecture/setup/providers/security/lifecycle/GitHub/demo/limitations/production-readiness docs are present.
-- [ ] Required npm commands and CI must pass before this ticket and implementation tickets become COMPLETE.
+- [x] Required npm commands and CI passed before this ticket and implementation tickets became COMPLETE.
 
 ## Verification gate
 

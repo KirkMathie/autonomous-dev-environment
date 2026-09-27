@@ -2,7 +2,7 @@
 
 ## Status
 
-IN_PROGRESS — implementation and local verification are complete; required PR CI has not yet passed.
+COMPLETE — implementation, local validation, and required PR CI passed.
 
 ## Dependencies
 
