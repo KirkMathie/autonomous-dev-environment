@@ -24,6 +24,10 @@ export interface RuntimeConfig {
   typesafeApiKey?: string;
   typesafeBaseUrl?: string;
   typesafeModel: string;
+  evidenceRetentionDays: number;
+  lockStaleMs: number;
+  policyFile?: string;
+  requireIsolation: boolean;
 }
 
 function positiveInteger(value: string | undefined, fallback: number, name: string): number {
@@ -60,5 +64,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, cwd = process.c
     ...(env.TYPESAFE_API_KEY ? { typesafeApiKey: env.TYPESAFE_API_KEY } : {}),
     ...(env.TYPESAFE_BASE_URL ? { typesafeBaseUrl: env.TYPESAFE_BASE_URL } : {}),
     typesafeModel: env.TYPESAFE_MODEL || "jev-latest",
+    evidenceRetentionDays: positiveInteger(env.ADE_EVIDENCE_RETENTION_DAYS, 30, "ADE_EVIDENCE_RETENTION_DAYS"),
+    lockStaleMs: positiveInteger(env.ADE_LOCK_STALE_MS, 300_000, "ADE_LOCK_STALE_MS"),
+    ...(env.ADE_POLICY_FILE ? { policyFile: resolve(cwd, env.ADE_POLICY_FILE) } : {}),
+    requireIsolation: env.ADE_REQUIRE_ISOLATION === "true",
   };
 }

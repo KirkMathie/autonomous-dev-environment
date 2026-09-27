@@ -16,3 +16,18 @@ The repository uses `tickets/` as the executable backlog record. Ticket 001 is t
 | 10 Tests/docs/backlog | `tickets/011-tests-docs.md` | 002-010 | COMPLETE |
 
 A ticket is changed to `COMPLETE` only after implementation plus the required repository checks pass. The final CI verification commit records that transition.
+
+## Production-enablement backlog
+
+The original implementation epics are complete. The following epics turn the local vertical slice into an operable production candidate. Tickets marked `BLOCKED` require an operator decision, external account, deployment platform, or provider workflow and are intentionally not guessed by the repository.
+
+| Epic | Tickets | Status |
+| --- | --- | --- |
+| 11 Secure runtime and isolation | `012-runtime-readiness.md`, `013-sandbox-profile.md`, `014-workspace-state-separation.md` | PARTIAL |
+| 12 Secrets and credentials | `015-secret-hygiene.md`, `016-secret-manager-credentials.md` | PARTIAL |
+| 13 Live provider readiness | `017-provider-readiness.md`, `018-live-smoke-tests.md`, `019-jules-reconciliation.md`, `020-jev-production-config.md` | PARTIAL |
+| 14 Evidence lifecycle | `021-evidence-retention.md`, `022-sensitive-metadata.md` | COMPLETE |
+| 15 Organization governance | `023-policy-profiles.md`, `024-dependency-approval.md` | PARTIAL |
+| 16 Concurrency and recovery | `025-run-locking.md`, `026-concurrency-chaos.md` | PARTIAL |
+| 17 Threat modeling | `027-threat-model.md`, `028-adversarial-tests.md` | COMPLETE |
+| 18 Operations and release | `029-readiness-command.md`, `030-production-go-live.md` | PARTIAL |

@@ -87,6 +87,10 @@ export class Orchestrator {
   }
 
   private async process(runId: string): Promise<CompletionResult> {
+    return this.deps.store.withRunLock(runId, () => this.processLocked(runId));
+  }
+
+  private async processLocked(runId: string): Promise<CompletionResult> {
     let iterations = 0;
     try {
       while (iterations++ < 100) {
@@ -350,7 +354,7 @@ export class Orchestrator {
       run = await this.deps.store.saveRun(run);
       await this.plan(run);
       run = await this.deps.store.transition(run, "RUNNING", "Human approved high-risk task gate.");
-      return this.process(run.id);
+      return this.processLocked(run.id);
     }
 
     if (approval.type === "TOOL" && approval.request) {
@@ -365,7 +369,7 @@ export class Orchestrator {
       delete run.pendingApproval;
       run = await this.deps.store.saveRun(run);
       run = await this.deps.store.transition(run, "RUNNING", "Approved tool executed; worker loop resumed.");
-      return this.process(run.id);
+      return this.processLocked(run.id);
     }
 
     return this.toResult(run);
@@ -384,7 +388,7 @@ export class Orchestrator {
     run = await this.deps.store.saveRun(run);
     if (run.attempt < run.maxRetries) run = await this.deps.store.transition(run, "RETRYING", "Human approved retry after escalation.");
     else run = await this.deps.store.transition(run, "RUNNING", "Human approved continuation after escalation.");
-    return this.process(run.id);
+    return this.processLocked(run.id);
   }
 
   private async escalate(run: RunRecord, code: Escalation["code"], reason: string): Promise<void> {

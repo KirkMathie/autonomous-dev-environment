@@ -1,4 +1,4 @@
-import { appendFile, mkdir, readFile, readdir } from "node:fs/promises";
+import { appendFile, mkdir, readFile, readdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import type { EvidenceRecord, RunRecord, RunState, Task } from "../domain/types.js";
@@ -7,6 +7,7 @@ import { assertTransition } from "./machine.js";
 import { atomicWriteJson, ensureDir, readJsonFile } from "../utils/fs.js";
 import { nowIso } from "../utils/time.js";
 import { redactValue } from "../evidence/redactor.js";
+import { RunExecutionLock } from "./lock.js";
 
 export interface RunEvent {
   id: string;
@@ -20,8 +21,38 @@ export interface RunEvent {
 export class FileRunStore {
   readonly baseDir: string;
 
-  constructor(baseDir: string) {
+  constructor(baseDir: string, private readonly options: { lockStaleMs?: number } = {}) {
     this.baseDir = baseDir;
+  }
+
+  async withRunLock<T>(runId: string, operation: () => Promise<T>): Promise<T> {
+    const lock = new RunExecutionLock(this.runDir(runId), this.options.lockStaleMs ?? 300_000);
+    await lock.acquire();
+    try {
+      return await operation();
+    } finally {
+      await lock.release();
+    }
+  }
+
+  async pruneTerminalRuns(retentionDays: number, now = Date.now()): Promise<string[]> {
+    if (!Number.isSafeInteger(retentionDays) || retentionDays <= 0) throw new Error("Evidence retention days must be greater than zero.");
+    await this.initialize();
+    const cutoff = now - retentionDays * 24 * 60 * 60 * 1000;
+    const removed: string[] = [];
+    for (const runId of await readdir(this.runsDir())) {
+      const statePath = this.runFile(runId);
+      try {
+        const run = await readJsonFile<RunRecord>(statePath);
+        if (["COMPLETED", "FAILED", "CANCELLED"].includes(run.state) && Date.parse(run.updatedAt) < cutoff) {
+          await rm(this.runDir(runId), { recursive: true, force: true });
+          removed.push(runId);
+        }
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      }
+    }
+    return removed.sort();
   }
 
   private tasksDir(): string {

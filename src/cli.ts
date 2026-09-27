@@ -5,6 +5,7 @@ import { prepareDemoWorkspace } from "./demo/workspace.js";
 import type { Task } from "./domain/types.js";
 import { loadConfig } from "./orchestrator/config.js";
 import { createRuntime } from "./orchestrator/runtime.js";
+import { assessReadiness } from "./orchestrator/readiness.js";
 import { nowIso } from "./utils/time.js";
 
 interface ParsedArgs {
@@ -58,6 +59,8 @@ function usage(): never {
     "  ade cancel <run-id>",
     "  ade evidence <run-id>",
     "  ade summary <run-id>",
+    "  ade readiness",
+    "  ade prune-evidence",
     "  ade demo [--data-dir <path>]",
   ].join("\n"));
 }
@@ -69,6 +72,13 @@ async function main(): Promise<void> {
   const dataDirFlag = flag(args, "data-dir");
   const env = { ...process.env, ...(dataDirFlag && dataDirFlag !== "true" ? { ADE_DATA_DIR: dataDirFlag } : {}) };
   let config = loadConfig(env);
+
+  if (command === "readiness") {
+    const report = await assessReadiness(config);
+    print(report);
+    if (!report.ready) process.exitCode = 1;
+    return;
+  }
 
   if (command === "demo") {
     const demoDir = resolve(dataDirFlag && dataDirFlag !== "true" ? dataDirFlag : ".ade-demo");
@@ -83,6 +93,10 @@ async function main(): Promise<void> {
   }
 
   const runtime = createRuntime(config);
+  if (command === "prune-evidence") {
+    print({ retentionDays: config.evidenceRetentionDays, removedRunIds: await runtime.store.pruneTerminalRuns(config.evidenceRetentionDays) });
+    return;
+  }
   if (command === "create-task") {
     const workspace = resolve(flag(args, "workspace") || config.workspace);
     const allowed = flags(args, "allow").filter((value) => value !== "true");

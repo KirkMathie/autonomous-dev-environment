@@ -9,6 +9,7 @@ import { FileRunStore } from "../state/store.js";
 import { deleteFileTool, readFileTool, runCommandTool, writeFileTool } from "../tools/builtin.js";
 import { ToolExecutor } from "../tools/executor.js";
 import { ToolPolicyEngine } from "../tools/policy.js";
+import { loadPolicyProfile } from "../tools/profile.js";
 import { ToolRegistry } from "../tools/registry.js";
 import { VerificationRunner } from "../verification/runner.js";
 import { Orchestrator } from "./orchestrator.js";
@@ -22,7 +23,7 @@ export interface Runtime {
 }
 
 export function createRuntime(config: RuntimeConfig): Runtime {
-  const store = new FileRunStore(config.dataDir);
+  const store = new FileRunStore(config.dataDir, { lockStaleMs: config.lockStaleMs });
   const providers = new ProviderRegistry();
 
   if (config.mode === "mock") {
@@ -45,7 +46,7 @@ export function createRuntime(config: RuntimeConfig): Runtime {
 
   const tools = new ToolRegistry();
   for (const tool of [readFileTool, writeFileTool, deleteFileTool, runCommandTool]) tools.register(tool);
-  const policy = new ToolPolicyEngine(tools);
+  const policy = new ToolPolicyEngine(tools, loadPolicyProfile(config.policyFile));
   const executor = new ToolExecutor(tools, policy);
   const routing = new RoutingPolicy(providers, {
     decisionProvider: config.decisionProvider,
